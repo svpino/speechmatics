@@ -2,4 +2,3 @@ speechmatics-python
 python-dotenv
 pyaudio
 speechmatics_flow
-sounddevice

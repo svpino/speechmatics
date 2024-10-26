@@ -18,7 +18,6 @@ from speechmatics_flow.models import (
 load_dotenv()
 
 
-# Create a websocket client
 ssl_context = ssl.create_default_context()
 ssl_context.check_hostname = False
 ssl_context.verify_mode = ssl.CERT_NONE
@@ -50,13 +49,12 @@ async def audio_playback():
     stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, output=True)
     try:
         while True:
-            # Get the current value from the buffer
             audio_to_play = audio_buffer.getvalue()
-            # Only proceed if there is audio data to play
             if audio_to_play:
                 stream.write(audio_to_play)
                 audio_buffer.seek(0)
                 audio_buffer.truncate(0)
+
             # Pause briefly before checking the buffer again
             await asyncio.sleep(0.05)
     finally:
@@ -67,15 +65,20 @@ async def audio_playback():
 
 async def main():
     tasks = [
-        # Use the websocket to connect to Flow Service and start a conversation
         asyncio.create_task(
             client.run(
                 interactions=[Interaction(sys.stdin.buffer)],
                 audio_settings=AudioSettings(),
-                conversation_config=ConversationConfig(),
+                conversation_config=ConversationConfig(
+                    template_id="flow-service-assistant-humphrey",
+                    template_variables={
+                        "persona": "You are a joyful old man full of knowledge.",
+                        "style": "Be charming and sassy. Be helpful in your answers without being patronising.",
+                        "context": "You are having a conversation about history with another person.",
+                    },
+                ),
             )
         ),
-        # Run audio playback handler which streams audio from audio buffer
         asyncio.create_task(audio_playback()),
     ]
 
