@@ -31,7 +31,8 @@ client = WebsocketClient(
 
 # Create a buffer to store binary messages sent from the server
 audio_buffer = io.BytesIO()
-
+min_buffer = 16000
+buffer_polling_interval = 0.005
 
 # Create callback function which adds binary messages to audio buffer
 def binary_msg_handler(msg: bytes):
@@ -48,15 +49,19 @@ async def audio_playback():
     p = pyaudio.PyAudio()
     stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, output=True)
     try:
+        isPlaying = False
         while True:
-            audio_to_play = audio_buffer.getvalue()
-            if audio_to_play:
-                stream.write(audio_to_play)
+            nbytes = audio_buffer.getbuffer().nbytes
+            if isPlaying or nbytes > min_buffer:
+                stream.write(audio_buffer.getvalue())
                 audio_buffer.seek(0)
                 audio_buffer.truncate(0)
+                isPlaying = True
+            if nbytes == 0:
+                isPlaying = False
 
             # Pause briefly before checking the buffer again
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(buffer_polling_interval)
     finally:
         stream.close()
         stream.stop_stream()
