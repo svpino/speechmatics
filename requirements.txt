@@ -1,4 +1,3 @@
-speechmatics-python
+speechmatics_flow
 python-dotenv
 pyaudio
-speechmatics_flow
