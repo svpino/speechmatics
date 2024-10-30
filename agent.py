@@ -30,9 +30,10 @@ client = WebsocketClient(
 )
 
 # Create a buffer to store binary messages sent from the server
+MIN_BUFFER = 16000
+BUFFER_POLLING_INTERVAL = 0.005
 audio_buffer = io.BytesIO()
-min_buffer = 16000
-buffer_polling_interval = 0.005
+
 
 # Create callback function which adds binary messages to audio buffer
 def binary_msg_handler(msg: bytes):
@@ -40,7 +41,8 @@ def binary_msg_handler(msg: bytes):
         audio_buffer.write(msg)
 
 
-# Register the callback to be called when the client receives an audio message from the server
+# Register the callback to be called when the client receives
+# an audio message from the server
 client.add_event_handler(ServerMessageType.audio, binary_msg_handler)
 
 
@@ -52,7 +54,7 @@ async def audio_playback():
         isPlaying = False
         while True:
             nbytes = audio_buffer.getbuffer().nbytes
-            if isPlaying or nbytes > min_buffer:
+            if isPlaying or nbytes > MIN_BUFFER:
                 stream.write(audio_buffer.getvalue())
                 audio_buffer.seek(0)
                 audio_buffer.truncate(0)
@@ -61,7 +63,7 @@ async def audio_playback():
                 isPlaying = False
 
             # Pause briefly before checking the buffer again
-            await asyncio.sleep(buffer_polling_interval)
+            await asyncio.sleep(BUFFER_POLLING_INTERVAL)
     finally:
         stream.close()
         stream.stop_stream()
@@ -77,9 +79,9 @@ async def main():
                 conversation_config=ConversationConfig(
                     template_id="flow-service-assistant-humphrey",
                     template_variables={
-                        "persona": "You are a joyful old man full of knowledge.",
+                        "persona": "Your name is Alfred. You are a joyful old man full of knowledge.",
                         "style": "Be charming and sassy. Be helpful in your answers without being patronising.",
-                        "context": "You are having a conversation about history with another person.",
+                        "context": "You are having a conversation with another person.",
                     },
                 ),
             )
